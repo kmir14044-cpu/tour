@@ -7,6 +7,7 @@ const money=n=>`PKR ${Number(n||0).toLocaleString()}`;
 const activeText=v=>v===false?'No':'Yes';
 const statuses=['New','Contacted','Quoted','Booked','Cancelled'];
 const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+const syncTables=['destinations','tours','hotels','hotelCategories','transports','activities','itineraries','bookings'];
 function opts(arr, selected='', label='Select'){return `<option value="">${label}</option>`+(arr||[]).map(x=>{const val=x.name||x.title||x;return `<option ${val==selected?'selected':''}>${val}</option>`}).join('')}
 function show(id,el){document.querySelectorAll('main section').forEach(s=>s.classList.add('hidden'));$(id).classList.remove('hidden');document.querySelectorAll('.sideLink').forEach(a=>a.classList.remove('active')); if(el) el.classList.add('active')}
 function logout(){sessionStorage.removeItem('tdpAdmin');location.href='login.html'}
@@ -71,7 +72,7 @@ function addTransport(){ const obj={id:editType==='transports'?editId:Date.now()
 function addAct(){ const obj={id:editType==='activities'?editId:Date.now(),name:clean(aName.value),destination:clean(aDest.value)||'All',price:Number(aPrice.value||0),image:clean(aImage.value),active:aActive.checked}; if(!obj.name) return alert('Please add activity name.'); upsert('activities',obj); }
 function addItin(){ const obj={id:editType==='itineraries'?editId:Date.now(),tourTitle:clean(iTour.value),destination:clean(iDest.value),day:Number(iDay.value||1),title:clean(iTitle.value),image:clean(iImage.value),time1:clean(iTime1.value),activity1:clean(iActivity1.value),time2:clean(iTime2.value),activity2:clean(iActivity2.value),time3:clean(iTime3.value),activity3:clean(iActivity3.value)}; if(!obj.destination||!obj.day||!obj.title) return alert('Please add destination, day and title.'); upsert('itineraries',obj); }
 function addBooking(){ const obj={id:editType==='bookings'?editId:Date.now(),customer:clean(bCustomer.value),email:clean(bEmail.value),phone:clean(bPhone.value),tour:clean(bTour.value),travelDate:clean(bDate.value),amount:Number(bAmount.value||0),status:clean(bStatus.value)||'Pending'}; if(!obj.customer||!obj.email||!obj.phone||!obj.tour) return alert('Customer name, email, phone and tour are required.'); upsert('bookings',obj); }
-function saveSettings(){ data.settings={...data.settings,whatsapp:clean(sWhatsapp.value),currency:clean(sCurrency.value),company:clean(sCompany.value),sheetsUrl:clean(sSheetsUrl.value),sheetsToken:clean(sSheetsToken.value)}; save(); setSyncStatus(sheetsEnabled()?'Google Sheets connection saved. Use Sync Now to pull verified records.':'Google Sheets URL is not configured.','info'); }
+async function saveSettings(){ data.settings={...data.settings,whatsapp:clean(sWhatsapp.value),currency:clean(sCurrency.value),company:clean(sCompany.value),sheetsUrl:clean(sSheetsUrl.value),sheetsToken:clean(sSheetsToken.value)}; save(); if(sheetsEnabled()){ setSyncStatus('Google Sheets connection saved. Pushing local dashboard data...'); await pushAllToSheet(false); } else setSyncStatus('Google Sheets URL is not configured.','info'); }
 async function updateLeadStatus(id,status){
   const lead=data.leads.find(l=>String(l.id)===String(id));
   data.leads=data.leads.map(l=>String(l.id)===String(id)?{...l,status}:l);
@@ -94,12 +95,37 @@ async function syncFromSheet(){
     setSyncStatus('Verified Google Sheets records loaded.','ok');
   }catch(err){setSyncStatus(err.message,'error'); alert(err.message);}
 }
+async function pushAllToSheet(showDone=true){
+  if(!sheetsEnabled()) return alert('Add the Google Apps Script Web App URL in Settings first.');
+  try{
+    let count=0;
+    setSyncStatus('Pushing local dashboard data to Google Sheets...');
+    for(const lead of (data.leads||[])){
+      if(!lead.name||!lead.email||!lead.phone) continue;
+      await syncLeadToSheet({...lead,verified:'Yes',source:lead.source||'Admin'});
+      if(lead.status && lead.status!=='New') await updateSheetLeadStatus(lead.id,lead.status);
+      count++;
+    }
+    for(const type of syncTables){
+      for(const record of (data[type]||[])){
+        await syncRecordToSheet(type,record);
+        count++;
+      }
+    }
+    setSyncStatus(`Pushed ${count} local records to Google Sheets.`,'ok');
+    if(showDone) alert(`Pushed ${count} local records to Google Sheets.`);
+  }catch(err){
+    const help = err.message.includes('connect') ? ' Check Apps Script deployment access: Execute as Me, Who has access Anyone, then redeploy.' : '';
+    setSyncStatus(err.message + help,'error');
+    alert(err.message + help);
+  }
+}
 
 function render(){
   leadCount.textContent=data.leads.length; destCount.textContent=data.destinations.length; tourCount.textContent=data.tours.length; hotelCount.textContent=data.hotels.length; itinCount.textContent=(data.itineraries||[]).length;
   const statusOptions=current=>statuses.map(s=>`<option ${current===s?'selected':''}>${s}</option>`).join('');
   const verifiedBadge=v=>v==='Yes'?'<span class="statusBadge verified">Verified</span>':'<span class="statusBadge local">Local</span>';
-  document.querySelector('#dashboard .adminCard').innerHTML=`<h2>Google Sheets Sync</h2><p>The portal can use Google Sheets as the live records database through the Apps Script Web App in <b>Settings</b>. Traveler submissions save to the Sheet, and admin status changes move leads into Booked or Cancelled tabs.</p><div class="syncBar"><span id="syncStatus" class="syncStatus ${sheetsEnabled()?'ok':'info'}">${sheetsEnabled()?'Google Sheets is configured.':'Google Sheets is not configured yet.'}</span><button class="btn small" onclick="syncFromSheet()">Sync Now</button></div>`;
+  document.querySelector('#dashboard .adminCard').innerHTML=`<h2>Google Sheets Sync</h2><p>The portal can use Google Sheets as the live records database through the Apps Script Web App in <b>Settings</b>. Traveler submissions save to the Sheet, admin changes autosave, and lead statuses move into Booked or Cancelled tabs.</p><div class="syncBar"><span id="syncStatus" class="syncStatus ${sheetsEnabled()?'ok':'info'}">${sheetsEnabled()?'Google Sheets is configured.':'Google Sheets is not configured yet.'}</span><button class="btn small" onclick="pushAllToSheet()">Push All Local Data</button><button class="btn small alt" onclick="syncFromSheet()">Pull From Sheet</button></div>`;
 
   leadsTable.innerHTML='<tr><th>Name</th><th>Email</th><th>Phone</th><th>Destination</th><th>Hotel</th><th>Days</th><th>Travelers</th><th>Child Ages</th><th>Date</th><th>Record</th><th>Status</th><th></th></tr>'+((data.leads||[]).map(l=>`<tr><td>${esc(l.name||'-')}</td><td>${esc(l.email||'-')}</td><td>${esc(l.phone||'-')}</td><td>${esc(l.destination||'-')}</td><td>${esc(l.style||'-')}</td><td>${esc(l.days||'-')}</td><td>${esc(l.travelers||'-')}</td><td>${esc(l.childAges||'-')}</td><td>${esc(l.month||'-')}</td><td>${verifiedBadge(l.verified)}</td><td><select onchange="updateLeadStatus(${Number(l.id)},this.value)">${statusOptions(l.status||'New')}</select></td><td><button class="btn small alt" onclick="del('leads',${Number(l.id)})">Delete</button></td></tr>`).join('')||'<tr><td colspan="12">No verified leads yet. Submit a request from the traveler page or click Sync Now.</td></tr>');
 
@@ -127,6 +153,6 @@ function render(){
   bookingForm.innerHTML=`<h3>${editType==='bookings'?'Edit':'Add'} Booking</h3><div class="detailsGrid"><input id="bCustomer" placeholder="Customer name" value="${val('bookings','customer')}"><input id="bEmail" placeholder="Email" value="${val('bookings','email')}"><input id="bPhone" placeholder="Phone / WhatsApp" value="${val('bookings','phone')}"><select id="bTour">${opts(data.tours,val('bookings','tour'),'Tour')}</select><input id="bDate" type="date" value="${val('bookings','travelDate')}"><input id="bAmount" type="number" placeholder="Amount" value="${val('bookings','amount')}"><select id="bStatus"><option ${val('bookings','status')==='Pending'?'selected':''}>Pending</option><option ${val('bookings','status')==='Confirmed'?'selected':''}>Confirmed</option><option ${val('bookings','status')==='Paid'?'selected':''}>Paid</option><option ${val('bookings','status')==='Cancelled'?'selected':''}>Cancelled</option></select></div><br><button class="btn small" onclick="addBooking()">${editType==='bookings'?'Update':'Add'} Booking</button> ${editType==='bookings'?'<button class="btn small alt" onclick="clearForm()">Cancel</button>':''}`;
   bookingsTable.innerHTML='<tr><th>Customer</th><th>Email</th><th>Phone</th><th>Tour</th><th>Travel Date</th><th>Amount</th><th>Status</th><th>Actions</th></tr>'+((data.bookings||[]).map(b=>`<tr><td>${b.customer}</td><td>${b.email||'-'}</td><td>${b.phone||'-'}</td><td>${b.tour}</td><td>${b.travelDate||'-'}</td><td>${money(b.amount)}</td><td>${b.status}</td><td><button class="btn small alt" onclick="edit('bookings',${b.id})">Edit</button> <button class="btn small alt" onclick="del('bookings',${b.id})">Delete</button></td></tr>`).join('')||'<tr><td colspan="8">No bookings yet.</td></tr>');
 
-  settingsForm.innerHTML=`<h3>Website Settings</h3><div class="detailsGrid settingsGrid"><input id="sCompany" placeholder="Company name" value="${esc(data.settings.company)}"><input id="sWhatsapp" placeholder="WhatsApp number" value="${esc(data.settings.whatsapp)}"><input id="sCurrency" placeholder="Currency" value="${esc(data.settings.currency)}"><input id="sSheetsUrl" class="span2" placeholder="Google Apps Script Web App URL" value="${esc(data.settings.sheetsUrl||'')}"><input id="sSheetsToken" placeholder="Sync token optional" value="${esc(data.settings.sheetsToken||'')}"></div><div class="syncBar"><span id="syncStatus" class="syncStatus ${sheetsEnabled()?'ok':'info'}">${sheetsEnabled()?'Google Sheets is configured.':'Paste your Apps Script Web App URL to enable live sync.'}</span><button class="btn small" onclick="saveSettings()">Save Settings</button><button class="btn small alt" onclick="syncFromSheet()">Sync Now</button></div>`;
+  settingsForm.innerHTML=`<h3>Website Settings</h3><div class="detailsGrid settingsGrid"><input id="sCompany" placeholder="Company name" value="${esc(data.settings.company)}"><input id="sWhatsapp" placeholder="WhatsApp number" value="${esc(data.settings.whatsapp)}"><input id="sCurrency" placeholder="Currency" value="${esc(data.settings.currency)}"><input id="sSheetsUrl" class="span2" placeholder="Google Apps Script Web App URL" value="${esc(data.settings.sheetsUrl||'')}"><input id="sSheetsToken" placeholder="Sync token optional" value="${esc(data.settings.sheetsToken||'')}"></div><p class="syncHelp">For automatic saving, the Apps Script Web App must be deployed with <b>Execute as: Me</b> and <b>Who has access: Anyone</b>. If Google opens a sign-in page, Sheets will not receive records.</p><div class="syncBar"><span id="syncStatus" class="syncStatus ${sheetsEnabled()?'ok':'info'}">${sheetsEnabled()?'Google Sheets is configured.':'Paste your Apps Script Web App URL to enable live sync.'}</span><button class="btn small" onclick="saveSettings()">Save Settings & Push</button><button class="btn small alt" onclick="pushAllToSheet()">Push All Local Data</button><button class="btn small alt" onclick="syncFromSheet()">Pull From Sheet</button></div>`;
 }
 render();
