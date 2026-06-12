@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Tours De Pakistan | Trip Designer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="designerBody">
+  <nav class="nav cleanNav">
+    <div class="container navin">
+      <a class="brand" href="index.html"><span class="logoMark">TDP</span><span>TOURS DE<br>PAKISTAN</span></a>
+      <div class="links"><a href="#tripDesigner">Trip Designer</a><a href="#itinerary">Itinerary</a><a href="#experiences">Experiences</a><a href="login.html">Admin</a></div>
+      <a class="btn small" id="navWhatsapp" href="https://wa.me/923703049245">Talk to Expert</a>
+    </div>
+  </nav>
+
+  <header class="modernHero">
+    <div class="heroOverlay"></div>
+    <div class="container heroIntro">
+      <span class="pill">Custom Pakistan Tours</span>
+      <h1>Design your perfect Pakistan journey</h1>
+      <p>Choose date, destination, hotel, guests and transport in one simple guided form. Your live itinerary appears below.</p>
+    </div>
+  </header>
+
+  <main class="container modernMain" id="tripDesigner">
+    <section class="wizardCard">
+      <div class="wizardSteps" id="wizardSteps"></div>
+      <div class="wizardGrid">
+        <div class="field big"><label>Your Name <b>*</b></label><input id="travelerName" type="text" placeholder="Enter your full name" autocomplete="name"></div>
+        <div class="field big"><label>Email Address <b>*</b></label><input id="travelerEmail" type="email" placeholder="name@example.com" autocomplete="email"></div>
+        <div class="field big"><label>Phone / WhatsApp <b>*</b></label><input id="travelerPhone" type="tel" placeholder="+92 300 0000000" autocomplete="tel"></div>
+        <div class="field big"><label>Trip Start Date <b>*</b></label><input id="startDate" type="date"></div>
+        <div class="availabilityBox" id="availabilityBox">Complete the form to unlock your custom trip preview.</div>
+        <div class="field big"><label>Starting City <b>*</b></label><select id="city"><option value="">Select starting city</option><option>Islamabad</option><option>Lahore</option><option>Karachi</option></select></div>
+        <div class="field big"><label>Destination <b>*</b></label><select id="destination"></select></div>
+        <div class="field big"><label>Number of Days <b>*</b></label><select id="days"><option value="">Select duration</option><option value="3">3 Days 2 Nights</option><option value="5">5 Days 4 Nights</option><option value="6">6 Days 5 Nights</option><option value="7">7 Days 6 Nights</option><option value="10">10 Days 9 Nights</option><option value="14">14 Days 13 Nights</option></select></div>
+        <div class="field big"><label>Hotel Category <b>*</b></label><select id="hotel"><option value="">Select hotel category</option></select></div>
+        <div class="miniPanel guestsBox">
+          <h3>Guests</h3>
+          <div class="counterRow"><span>Adults <b>*</b></span><button type="button" class="circleBtn" data-counter="adults" data-dir="-1">&minus;</button><strong id="adultsVal">2</strong><button type="button" class="circleBtn" data-counter="adults" data-dir="1">+</button></div>
+          <div class="counterRow"><span>Children</span><button type="button" class="circleBtn" data-counter="children" data-dir="-1">&minus;</button><strong id="childrenVal">0</strong><button type="button" class="circleBtn" data-counter="children" data-dir="1">+</button></div>
+          <div id="childAges" class="childAges"></div>
+        </div>
+        <div class="miniPanel roomsBox">
+          <h3>Rooms</h3>
+          <div class="counterRow"><span>Number of Rooms</span><button type="button" class="circleBtn" data-counter="rooms" data-dir="-1">&minus;</button><strong id="roomsVal">1</strong><button type="button" class="circleBtn" data-counter="rooms" data-dir="1">+</button></div>
+        </div>
+        <div class="field big transportField"><label>Transport Type <b>*</b></label><select id="transport"><option value="">Select transport type</option></select></div>
+      </div>
+      <div class="wizardFooter">
+        <div><div id="summaryTags" class="summaryTags"></div><p class="helper">If you don't find a suitable package, contact us at <b>+92 370 3049245</b></p></div>
+        <button class="btn redBtn" id="designBtn" disabled>Design My Trip &rarr;</button>
+      </div>
+    </section>
+
+    <section class="resultBar hidden" id="resultBar"><div><span class="pill greenPill">Live estimate</span><h2 id="previewTitle">7 Days Deluxe Hunza Trip</h2><p id="previewMeta">2 Adults | 1 Room | From Islamabad</p></div><div><span>Starting from</span><strong id="price">PKR 420,000</strong></div></section>
+    <section class="panel simplePanel hidden" id="itinerary"><div class="sectionTitle"><div><h2>Day-by-Day Itinerary</h2><p>Modern timeline view generated from admin itinerary data and your selections.</p></div></div><span class="plane">Flight</span><span class="dashLine"></span><span class="pin">Stop</span><div class="itinerary" id="itineraryList"></div></section>
+    <section class="panel simplePanel hidden" id="experiences"><div class="sectionTitle"><div><h2>Choose optional experiences</h2><p>Add activities to make the trip more personalized.</p></div></div><div class="expGrid" id="expGrid"></div></section>
+    <section class="footerCta lightCta hidden" id="helpCta"><div><h2>Need help planning?</h2><p>Send your selections to our travel expert on WhatsApp.</p></div><a class="btn" id="whatsappCta" href="https://wa.me/923703049245">Chat on WhatsApp</a></section>
+  </main>
+  <script src="database.js"></script>
+  <script src="sheets-client.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

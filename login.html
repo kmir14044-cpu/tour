@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>TDP Admin Login</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="login">
+  <div class="loginBox">
+    <div class="brand"><span class="logoMark">TDP</span><span>TOURS DE<br>PAKISTAN</span></div>
+    <h1>Admin Login</h1>
+    <p>Traveler cannot access admin without login.</p>
+    <div class="field"><label>Username</label><input id="user" value="admin" autocomplete="username"></div>
+    <div class="field"><label>Password</label><input id="pass" type="password" value="tdp12345" autocomplete="current-password"></div>
+    <button class="btn full" onclick="login()">Login</button>
+    <p id="msg"></p>
+  </div>
+  <script src="database.js"></script>
+  <script>
+    function login() {
+      const d = getStore();
+      if (user.value === d.admin.username && pass.value === d.admin.password) {
+        sessionStorage.setItem('tdpAdmin', 'yes');
+        location.href = 'admin.html';
+      } else {
+        msg.textContent = 'Invalid login';
+      }
+    }
+  </script>
+</body>
+</html>

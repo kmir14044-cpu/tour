@@ -1,0 +1,3 @@
+{
+  "note": "Default portal content is in database.js. Live traveler and admin records can sync to Google Sheets through google-apps-script.gs. Browser fallback data uses localStorage under key tdpData."
+}

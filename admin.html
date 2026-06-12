@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>TDP Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="adminLayout">
+    <aside class="sidebar">
+      <div class="brand"><span class="logoMark">TDP</span><span>TOURS DE<br>PAKISTAN</span></div>
+      <a class="sideLink active" onclick="show('dashboard',this)">Dashboard</a>
+      <a class="sideLink" onclick="show('leads',this)">Leads</a>
+      <a class="sideLink" onclick="show('destinations',this)">Destinations</a>
+      <a class="sideLink" onclick="show('tours',this)">Tours</a>
+      <a class="sideLink" onclick="show('hotels',this)">Hotels</a>
+      <a class="sideLink" onclick="show('hotelCategories',this)">Hotel Categories</a>
+      <a class="sideLink" onclick="show('transports',this)">Transport</a>
+      <a class="sideLink" onclick="show('activities',this)">Activities</a>
+      <a class="sideLink" onclick="show('itineraries',this)">Itineraries</a>
+      <a class="sideLink" onclick="show('bookings',this)">Bookings</a>
+      <a class="sideLink" onclick="show('settings',this)">Settings</a>
+      <a class="sideLink" onclick="logout()">Logout</a>
+    </aside>
+    <main class="adminMain">
+      <div class="adminTop">
+        <div>
+          <h1>Admin Panel</h1>
+          <p>All traveler page dropdowns, cards, prices and itinerary content come from this admin data.</p>
+        </div>
+        <div>
+          <select id="excelType" class="miniSelect">
+            <option value="destinations">Destinations</option>
+            <option value="tours">Tours</option>
+            <option value="hotels">Hotels</option>
+            <option value="hotelCategories">Hotel Categories</option>
+            <option value="transports">Transport</option>
+            <option value="activities">Activities</option>
+            <option value="itineraries">Itineraries</option>
+            <option value="bookings">Bookings</option>
+            <option value="leads">Leads</option>
+          </select>
+          <button class="btn alt small" onclick="exportCSV()">Export Excel CSV</button>
+          <label class="btn alt small fileLabel">Import CSV<input id="csvFile" type="file" accept=".csv" onchange="importCSV(event)" hidden></label>
+          <a class="btn alt small" href="tdp-admin-data-template.xlsx">Excel Template</a>
+          <button class="btn alt small" onclick="exportData()">Export JSON</button>
+          <button class="btn alt small" onclick="resetAll()">Reset Local Data</button>
+        </div>
+      </div>
+
+      <section id="dashboard">
+        <div class="cards">
+          <div class="stat"><h3>Total Leads</h3><h2 id="leadCount">0</h2></div>
+          <div class="stat"><h3>Destinations</h3><h2 id="destCount">0</h2></div>
+          <div class="stat"><h3>Tours</h3><h2 id="tourCount">0</h2></div>
+          <div class="stat"><h3>Hotels</h3><h2 id="hotelCount">0</h2></div>
+          <div class="stat"><h3>Itinerary Days</h3><h2 id="itinCount">0</h2></div>
+        </div>
+        <div class="adminCard">
+          <h2>Data Source</h2>
+          <p>The trip designer page reads from <b>database.js</b> first, then saves admin changes in browser <b>localStorage</b>. Update destinations, hotels, transport, activities, tours and itineraries here, then refresh/open <b>index.html</b> to see them.</p>
+        </div>
+      </section>
+      <section id="leads" class="hidden"><div class="sectionTitle"><div><h2>Leads</h2><p>Trip requests submitted from the public trip designer.</p></div></div><table class="table"><tbody id="leadsTable"></tbody></table></section>
+      <section id="destinations" class="hidden"><h2>Destinations</h2><div id="destinationForm" class="adminCard"></div><table class="table"><tbody id="destinationsTable"></tbody></table></section>
+      <section id="tours" class="hidden"><h2>Tours</h2><div id="tourForm" class="adminCard"></div><table class="table"><tbody id="toursTable"></tbody></table></section>
+      <section id="hotels" class="hidden"><h2>Hotels</h2><div id="hotelForm" class="adminCard"></div><table class="table"><tbody id="hotelsTable"></tbody></table></section>
+      <section id="hotelCategories" class="hidden"><h2>Hotel Categories</h2><div id="hotelCategoryForm" class="adminCard"></div><table class="table"><tbody id="hotelCategoriesTable"></tbody></table></section>
+      <section id="transports" class="hidden"><h2>Transport</h2><div id="transportForm" class="adminCard"></div><table class="table"><tbody id="transportsTable"></tbody></table></section>
+      <section id="activities" class="hidden"><h2>Activities</h2><div id="activityForm" class="adminCard"></div><table class="table"><tbody id="activitiesTable"></tbody></table></section>
+      <section id="itineraries" class="hidden"><div class="sectionTitle"><div><h2>Itineraries</h2><p>Add day-by-day plans. Traveler page shows these by selected destination and number of days.</p></div><span class="chip">Admin controlled</span></div><div id="itineraryForm" class="adminCard"></div><table class="table"><tbody id="itinerariesTable"></tbody></table></section>
+      <section id="bookings" class="hidden"><h2>Bookings</h2><div id="bookingForm" class="adminCard"></div><table class="table"><tbody id="bookingsTable"></tbody></table></section>
+      <section id="settings" class="hidden">
+        <h2>Settings</h2>
+        <div id="settingsForm" class="adminCard"></div>
+        <div class="adminCard">
+          <h3>Excel / CSV Data Upload</h3>
+          <p>Use the top-right <b>Excel Template</b> file to prepare data in Excel. Save any sheet as <b>CSV</b>, choose the matching table above, then click <b>Import CSV</b>. Required lead fields are now <b>Name, Email, Phone</b>.</p>
+          <p><b>Admin Login:</b> admin / tdp12345</p>
+          <p>This is a front-end prototype. For a real live website database, connect the same data structure to MySQL + PHP/Laravel/Node API.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="database.js"></script>
+  <script src="sheets-client.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
